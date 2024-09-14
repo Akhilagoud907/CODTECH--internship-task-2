@@ -1,0 +1,46 @@
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from imblearn.over_sampling import SMOTE
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import classification_report, roc_auc_score, confusion_matrix
+
+# Load the dataset
+# For demonstration, let's assume you have a CSV file named 'creditcard.csv'
+# Make sure to replace 'path/to/creditcard.csv' with the actual path to your dataset
+data = pd.read_csv('path/to/creditcard.csv')
+
+# Exploring the dataset
+print(data.head())
+print(data.info())
+print(data['Class'].value_counts())
+
+# Splitting features and target variable
+X = data.drop('Class', axis=1)
+y = data['Class']
+
+# Split the data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
+
+# Standardize the features
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+# Handling imbalanced data using SMOTE
+smote = SMOTE(random_state=42)
+X_train_resampled, y_train_resampled = smote.fit_resample(X_train_scaled, y_train)
+
+# Model training using Random Forest
+rf_model = RandomForestClassifier(n_estimators=100, random_state=42)
+rf_model.fit(X_train_resampled, y_train_resampled)
+
+# Model prediction
+y_pred = rf_model.predict(X_test_scaled)
+y_pred_prob = rf_model.predict_proba(X_test_scaled)[:, 1]
+
+# Model evaluation
+print("Classification Report:\n", classification_report(y_test, y_pred))
+print("Confusion Matrix:\n", confusion_matrix(y_test, y_pred))
+print("ROC-AUC Score:", roc_auc_score(y_test, y_pred_prob))
